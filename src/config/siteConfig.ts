@@ -7,10 +7,10 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "吴吴吴",
+	title: "吴先宇",
 
 	// 站点副标题
-	subtitle: "Demo site",
+	subtitle: "大帅哥的博客",
 
 	// 站点 URL
 	site_url: "https://firefly.cuteleaf.cn",
@@ -21,7 +21,7 @@ export const siteConfig: SiteConfig = {
 
 	// 站点关键词
 	keywords: [
-		"Firefly",
+		"彭于晏",
 		"Fuwari",
 		"Astro",
 		"ACGN",
