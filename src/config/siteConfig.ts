@@ -7,7 +7,7 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "吴先宇",
+	title: "吴先宇666",
 
 	// 站点副标题
 	subtitle: "大帅哥的博客",
