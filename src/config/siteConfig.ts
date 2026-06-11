@@ -13,7 +13,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "大帅哥的博客",
 
 	// 站点 URL
-	site_url: "https://wxy.github.io",
+	site_url: "https://wxyloveylnx.com",
 
 	// 站点描述
 	description: "吴先宇的个人博客",
