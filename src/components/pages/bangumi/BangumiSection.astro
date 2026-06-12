@@ -2,74 +2,37 @@
 import ClientPagination from "@/components/common/ClientPagination.astro";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import type { UserSubjectCollection } from "@/types/bangumi";
+import type { BilibiliFollowItem } from "@/types/bangumi";
 import Card from "./Card.astro";
 import FilterControls from "./FilterControls.astro";
 
 interface Props {
 	sectionId: string;
-	items: UserSubjectCollection[];
+	items: BilibiliFollowItem[];
 	isActive: boolean;
 	itemsPerPage?: number;
 }
 
 const { sectionId, items, isActive, itemsPerPage = 12 } = Astro.props;
 
-// 状态映射
+// Bilibili follow_status (已重映射): 1=想看, 3=在看, 2=看过
 const statusMap = {
 	1: "wish",
 	2: "collect",
 	3: "doing",
-	4: "on_hold",
-	5: "dropped",
 };
 
-// Get status filters with counts
+// 获取各状态的条目数量
 const statusCounts = items.reduce(
 	(acc, item) => {
-		const status = statusMap[item.type as keyof typeof statusMap] || "unknown";
+		const status = statusMap[item.follow_status as keyof typeof statusMap] || "unknown";
 		acc[status] = (acc[status] || 0) + 1;
 		return acc;
 	},
 	{} as Record<string, number>,
 );
 
-const isGame = sectionId === "game";
-const isBook = sectionId === "book";
-const isMusic = sectionId === "music";
-
 const getFilterLabel = (type: "collect" | "doing" | "wish") => {
-	if (isGame) {
-		switch (type) {
-			case "collect":
-				return i18n(I18nKey.bangumiFilterGamePlayed);
-			case "doing":
-				return i18n(I18nKey.bangumiFilterGamePlaying);
-			case "wish":
-				return i18n(I18nKey.bangumiFilterGameWish);
-		}
-	}
-	if (isBook) {
-		switch (type) {
-			case "collect":
-				return i18n(I18nKey.bangumiFilterBookRead);
-			case "doing":
-				return i18n(I18nKey.bangumiFilterBookReading);
-			case "wish":
-				return i18n(I18nKey.bangumiFilterBookWish);
-		}
-	}
-	if (isMusic) {
-		switch (type) {
-			case "collect":
-				return i18n(I18nKey.bangumiFilterMusicListened);
-			case "doing":
-				return i18n(I18nKey.bangumiFilterMusicListening);
-			case "wish":
-				return i18n(I18nKey.bangumiFilterMusicWish);
-		}
-	}
-	// Default (Anime/Real)
 	switch (type) {
 		case "collect":
 			return i18n(I18nKey.bangumiFilterWatched);
@@ -97,19 +60,9 @@ const filters = [
 		label: getFilterLabel("wish"),
 		count: statusCounts.wish || 0,
 	},
-	{
-		value: "on_hold",
-		label: i18n(I18nKey.bangumiFilterOnHold),
-		count: statusCounts.on_hold || 0,
-	},
-	{
-		value: "dropped",
-		label: i18n(I18nKey.bangumiFilterDropped),
-		count: statusCounts.dropped || 0,
-	},
 ].filter((filter) => filter.value === "all" || filter.count > 0);
 
-const defaultFilter = "all"; // 默认显示全部，用户可以通过筛选器选择
+const defaultFilter = "all";
 ---
 
 <div class:list={["bangumi-section", { "hidden": !isActive }]} data-section={sectionId}>
@@ -126,7 +79,7 @@ const defaultFilter = "all"; // 默认显示全部，用户可以通过筛选器
           <div
             class="bangumi-item"
             data-item-section={sectionId}
-            data-item-status={statusMap[item.type as keyof typeof statusMap] || "unknown"}
+            data-item-status={statusMap[item.follow_status as keyof typeof statusMap] || "unknown"}
 						style={index < itemsPerPage ? undefined : "display: none;"}
           >
 						<Card item={item} loadImage={isActive && index < itemsPerPage} />

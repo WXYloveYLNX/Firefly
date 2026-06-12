@@ -54,3 +54,36 @@ export type SubjectImages = {
 	small: string;
 	grid: string;
 };
+
+// Bilibili 追番 API 类型
+export type BilibiliFollowResponse = {
+	code: number;
+	message: string;
+	data: {
+		list: BilibiliFollowItem[];
+		pn: number;
+		ps: number;
+		total: number;
+	};
+};
+
+export type BilibiliFollowItem = {
+	season_id: number;
+	media_id: number;
+	title: string;
+	cover: string;
+	follow_status: number; // 1: 想看, 2: 在看, 3: 看过
+	progress: string;
+	season_type: number;
+	areas: Array<{ name: string }>;
+	rating: { score: number; count: number } | null;
+	new_ep: {
+		id: number;
+		title: string;
+		index_show: string;
+	};
+	total_count: number;
+	url: string;
+	badge: string;
+	evaluate: string;
+};

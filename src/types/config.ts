@@ -51,6 +51,7 @@ export type SiteConfig = {
 	// bangumi配置
 	bangumi?: {
 		userId?: string; // Bangumi用户ID
+			bilibiliUid?: string; // Bilibili用户ID，用于获取追番数据
 		categoryOrder?: ("anime" | "game" | "book" | "music" | "real")[]; // 条目类型排序顺序
 	};
 

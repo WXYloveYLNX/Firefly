@@ -1,108 +1,79 @@
 ---
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import type { UserSubjectCollection } from "@/types/bangumi";
+import type { BilibiliFollowItem } from "@/types/bangumi";
 
 interface Props {
-	item: UserSubjectCollection;
+	item: BilibiliFollowItem;
 	loadImage?: boolean;
 }
 
 const { item, loadImage = false } = Astro.props;
 
-const subject_base_url = "https://bgm.tv/subject/";
-
-const getStatusColor = (type: number) => {
-	switch (type) {
+const getStatusColor = (status: number) => {
+	// follow_status (已重映射): 1=想看, 2=看过, 3=在看
+	switch (status) {
 		case 1:
-			return "bg-blue-500";
+			return "bg-blue-500"; // 想看
 		case 2:
-			return "bg-green-500";
+			return "bg-green-500"; // 看过
 		case 3:
-			return "bg-yellow-500";
-		case 4:
-			return "bg-orange-500";
-		case 5:
-			return "bg-red-500";
+			return "bg-yellow-500"; // 在看
 		default:
 			return "bg-gray-500";
 	}
 };
 
-const getStatusText = (type: number) => {
-	const subjectType = item.subject.type;
-	// 1: Book, 2: Anime, 3: Music, 4: Game, 6: Real
-
-	switch (type) {
-		case 1: // Wish
-			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookWish);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicWish);
-			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGameWish);
-			return i18n(I18nKey.bangumiStatusWish);
-		case 2: // Collect (Played/Watched/Read/Listened)
-			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookRead);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicListened);
-			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGamePlayed);
-			return i18n(I18nKey.bangumiStatusWatched);
-		case 3: // Doing (Playing/Watching/Reading/Listening)
-			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookReading);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicListening);
-			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGamePlaying);
-			return i18n(I18nKey.bangumiStatusWatching);
-		case 4:
-			return i18n(I18nKey.bangumiStatusOnHold);
-		case 5:
-			return i18n(I18nKey.bangumiStatusDropped);
+const getStatusText = (status: number) => {
+	switch (status) {
+		case 1:
+			return i18n(I18nKey.bangumiStatusWish); // 想看
+		case 2:
+			return i18n(I18nKey.bangumiStatusWatched); // 看过
+		case 3:
+			return i18n(I18nKey.bangumiStatusWatching); // 在看
 		default:
 			return i18n(I18nKey.bangumiStatusUnknown);
 	}
 };
 
-// 获取标签：优先用户标签，否则使用条目标签
-const displayTags =
-	item.tags && item.tags.length > 0
-		? item.tags
-		: (item.subject.tags || []).map((t) => t.name).slice(0, 5);
-
-const visibleCoverTags = displayTags.slice(0, 3);
-const hiddenCoverTagCount = Math.max(
-	displayTags.length - visibleCoverTags.length,
-	0,
-);
+// 地区标签
+const areaNames = (item.areas || []).map((a) => a.name).slice(0, 2);
 ---
 
 <a
-  href={`${subject_base_url}${item.subject.id}`}
+  href={item.url}
   target="_blank"
   rel="noopener noreferrer nofollow"
   class="group relative overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] block"
 >
   <div class="aspect-2/3 relative overflow-hidden">
-    {item.subject?.images?.medium ? (
+    {item.cover ? (
       <img
-        src={loadImage ? item.subject.images.medium : undefined}
-        data-src={loadImage ? undefined : item.subject.images.medium}
-        alt={item.subject.name_cn || item.subject.name}
+        src={loadImage ? item.cover : undefined}
+        data-src={loadImage ? undefined : item.cover}
+        alt={item.title}
         class="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
         decoding="async"
+        referrerpolicy="no-referrer"
       />
     ) : (
       <div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-        <div class="text-gray-400 text-4xl">📖</div>
+        <div class="text-gray-400 text-4xl">📺</div>
       </div>
     )}
 
     <!-- Status badge -->
-    <div class={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs text-white font-medium ${getStatusColor(item.type)}`}>
-      {getStatusText(item.type)}
+    <div class={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs text-white font-medium ${getStatusColor(item.follow_status)}`}>
+      {getStatusText(item.follow_status)}
     </div>
 
     <!-- Score badge -->
-    {item.subject.score && (
+    {item.rating && item.rating.score > 0 && (
       <div class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs text-white font-medium bg-black/50 backdrop-blur-sm flex items-center gap-1">
         <span class="text-yellow-400">⭐</span>
-        {item.subject.score}
+        {item.rating.score.toFixed(1)}
       </div>
     )}
 
@@ -110,34 +81,35 @@ const hiddenCoverTagCount = Math.max(
     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
     <div class="absolute bottom-0 left-0 right-0 p-3">
       <h3 class="font-bold text-sm text-white line-clamp-2 drop-shadow-lg">
-        {item.subject.name_cn || item.subject.name}
+        {item.title}
       </h3>
 
-      {item.subject.date && (
+      <!-- Badge + Area -->
+      <div class="flex flex-wrap items-center gap-1 mt-1">
+        {item.badge && item.badge !== " " && (
+          <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-red-500/80 text-white/90 backdrop-blur-sm">
+            {item.badge}
+          </span>
+        )}
+        {areaNames.map((area) => (
+          <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/20 text-white/80 backdrop-blur-sm">
+            {area}
+          </span>
+        ))}
+      </div>
+
+      <!-- Progress -->
+      {item.progress && item.progress !== " " && (
         <p class="text-xs text-white/60 mt-1">
-          {item.subject.date.substring(0, 4)}
+          {item.progress}
         </p>
       )}
 
-      {item.comment && (
-        <p class="text-xs text-white/75 line-clamp-1 mt-1 leading-relaxed" title={item.comment}>
-          {item.comment}
+      <!-- New episode -->
+      {item.new_ep && item.new_ep.index_show && item.new_ep.index_show !== " " && (
+        <p class="text-xs text-yellow-300/80 mt-0.5">
+          最新: {item.new_ep.index_show}
         </p>
-      )}
-
-      {displayTags && displayTags.length > 0 && (
-        <div class="flex flex-wrap gap-1 mt-1.5">
-          {visibleCoverTags.map((tag: string) => (
-            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/20 text-white/90 backdrop-blur-sm">
-              {tag}
-            </span>
-          ))}
-          {hiddenCoverTagCount > 0 && (
-            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/20 text-white/60 backdrop-blur-sm">
-              +{hiddenCoverTagCount}
-            </span>
-          )}
-        </div>
       )}
     </div>
   </div>
