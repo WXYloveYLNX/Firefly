@@ -4,6 +4,12 @@ import type { GalleryConfig } from "@/types/config";
 export const galleryConfig: GalleryConfig = {
 	// 相册列表
 	albums: [
+		{
+			id: "screenshots",
+			name: "屏幕截图",
+			description: "日常截图收集",
+			date: "2026-05-29",
+		},
 		// 支持jpg/png/webp/avif/gif格式
 		// id: 相册唯一标识符（用于目录命名和URL路径），比如设置：id: "my-album", 对应 public/gallery/my-album/目录
 		// cover: 手动指定封面图（可选，不填会把cover.*文件作为封面图，如果没有cover.*文件，则使用第一张图片作为封面图）
