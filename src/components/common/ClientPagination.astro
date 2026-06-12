@@ -209,8 +209,8 @@ const pageNumbers = generatePageNumbers(currentPage, totalPages);
       }
 
       // Hide all items first
-      for (const item of items) {
-        item.style.display = 'none';
+      for (let i = 0; i < items.length; i++) {
+        items[i].style.display = "none";
       }
 
       // Show items for current page
