@@ -4,8 +4,8 @@
 
 ## 📫 联系方式
 
-- 💻 **GitHub**: [wxy](https://github.com/wxy)
-- ✉️ **Email**: [example@example.com](mailto:example@example.com)
+- 💻 **GitHub**: [wxy](https://github.com/WXYloveYLNX)
+- ✉️ **Email**: [415970150@QQ.COM](mailto:415970150@QQ.COM) / [wxy20090218aa@gmail.com](mailto:wxy20090218aa@gmail.com)
 
 ---
 
