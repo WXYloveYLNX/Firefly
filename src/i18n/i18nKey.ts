@@ -309,6 +309,31 @@ enum I18nKey {
 	passwordSubmit = "passwordSubmit",
 	passwordError = "passwordError",
 	passwordProtectedRss = "passwordProtectedRss",
+
+	// Steam 游戏库
+	steam = "steam",
+	steamRecentGames = "steamRecentGames",
+	steamGameLibrary = "steamGameLibrary",
+	steamLibrarySubtitle = "steamLibrarySubtitle",
+	steamViewFullLibrary = "steamViewFullLibrary",
+	steamHours = "steamHours",
+	steamMinutes = "steamMinutes",
+	steamLastPlayed = "steamLastPlayed",
+	steamNotPlayedRecently = "steamNotPlayedRecently",
+	steamSortByPlaytime = "steamSortByPlaytime",
+	steamSortByName = "steamSortByName",
+	steamSortByRecent = "steamSortByRecent",
+	steamNoGames = "steamNoGames",
+	steamConfigNeeded = "steamConfigNeeded",
+	steamConfigNeededReason = "steamConfigNeededReason",
+	steamLastUpdated = "steamLastUpdated",
+	steamNoRecentGames = "steamNoRecentGames",
+	steamTotalGames = "steamTotalGames",
+	steamRecentPlaytime = "steamRecentPlaytime",
+	steamLoading = "steamLoading",
+	steamProfile = "steamProfile",
+	steamTotalPlaytime = "steamTotalPlaytime",
+	steamNoGamesReason = "steamNoGamesReason",
 }
 
 export default I18nKey;

@@ -43,4 +43,9 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/gallery/",
 		icon: "material-symbols:photo-library",
 	},
+	[LinkPreset.Steam]: {
+		name: i18n(I18nKey.steam),
+		url: "/steam/",
+		icon: "material-symbols:sports-esports",
+	},
 };

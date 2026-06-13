@@ -1,0 +1,251 @@
+---
+import { Icon } from "astro-icon/components";
+import { steamConfig } from "@/config";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import type {
+	SteamOwnedGame,
+	SteamOwnedGamesResponse,
+	SteamPlayer,
+	SteamPlayerSummariesResponse,
+	UnifiedSteamGame,
+} from "@/types/steam";
+import { getSteamImageUrl } from "@/types/steam";
+import { formatDateI18nWithTime } from "@/utils/date-utils";
+
+// Guard
+if (!siteConfig.pages.steam) {
+	return Astro.redirect("/404/");
+}
+
+const buildTime = formatDateI18nWithTime(new Date());
+const hasApiKey = !!steamConfig.apiKey;
+
+let player: SteamPlayer | null = null;
+let unifiedGames: UnifiedSteamGame[] = [];
+let totalPlaytimeMinutes = 0;
+let fetchError = false;
+
+if (hasApiKey) {
+	try {
+		const gamesUrl = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${steamConfig.apiKey}&steamid=${steamConfig.steamId}&include_appinfo=true&include_played_free_games=true`;
+		const gamesResponse = await fetch(gamesUrl);
+
+		if (gamesResponse.ok) {
+			const gamesData: SteamOwnedGamesResponse = await gamesResponse.json();
+			const rawGames = gamesData.response?.games || [];
+
+			unifiedGames = rawGames.map((g: SteamOwnedGame) => ({
+				appid: g.appid,
+				name: g.name,
+				playtimeForever: g.playtime_forever,
+				playtime2Weeks: g.playtime_2weeks || 0,
+				lastPlayed: g.rtime_last_played,
+				imgIconUrl: getSteamImageUrl(g.appid, g.img_icon_url, "icon"),
+				imgLogoUrl: getSteamImageUrl(g.appid, g.img_logo_url, "logo"),
+				headerUrl: getSteamImageUrl(g.appid, "", "header"),
+			}));
+
+			unifiedGames.sort((a, b) => b.playtimeForever - a.playtimeForever);
+			totalPlaytimeMinutes = unifiedGames.reduce((sum, g) => sum + g.playtimeForever, 0);
+		} else {
+			fetchError = true;
+		}
+
+		const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${steamConfig.apiKey}&steamids=${steamConfig.steamId}`;
+		const playerResponse = await fetch(playerUrl);
+		if (playerResponse.ok) {
+			const playerData: SteamPlayerSummariesResponse = await playerResponse.json();
+			player = playerData.response?.players?.[0] || null;
+		}
+	} catch (e) {
+		console.error("[Steam Page] Fetch error:", e);
+		fetchError = true;
+	}
+}
+
+function formatHours(minutes: number): string {
+	if (minutes < 60) return `${minutes} ${i18n(I18nKey.steamMinutes)}`;
+	return `${(minutes / 60).toFixed(1)} ${i18n(I18nKey.steamHours)}`;
+}
+
+function formatLastPlayed(timestamp: number): string {
+	if (!timestamp || timestamp === 0) return i18n(I18nKey.steamNotPlayedRecently);
+	return formatDateI18nWithTime(new Date(timestamp * 1000));
+}
+---
+
+<MainGridLayout
+	title={i18n(I18nKey.steamGameLibrary)}
+	description={i18n(I18nKey.steamLibrarySubtitle)}
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- Page Header -->
+			<div class="relative w-full mb-8">
+				<div class="mb-6">
+					<div class="flex items-center gap-3 mb-3">
+						<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+							<Icon name="material-symbols:sports-esports" class="text-[1.5rem]"></Icon>
+						</div>
+						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+							{i18n(I18nKey.steamGameLibrary)}
+						</div>
+					</div>
+					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+						{i18n(I18nKey.steamLibrarySubtitle)}
+					</p>
+					<p class="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
+						{i18n(I18nKey.steamLastUpdated)} {buildTime}
+					</p>
+				</div>
+
+				<!-- Stats Bar -->
+				{unifiedGames.length > 0 && (
+					<div class="flex flex-wrap gap-4 mb-6">
+						<div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--btn-regular-bg)">
+							<Icon name="material-symbols:grid-view" class="text-(--primary)" />
+							<span class="text-sm text-neutral-700 dark:text-neutral-300">
+								<strong>{unifiedGames.length}</strong> {i18n(I18nKey.steamTotalGames)}
+							</span>
+						</div>
+						<div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--btn-regular-bg)">
+							<Icon name="material-symbols:schedule" class="text-(--primary)" />
+							<span class="text-sm text-neutral-700 dark:text-neutral-300">
+								{formatHours(totalPlaytimeMinutes)}
+							</span>
+						</div>
+					</div>
+				)}
+
+				<!-- Sort Controls -->
+				{unifiedGames.length > 0 && (
+					<div class="flex gap-2 mb-4" id="steam-sort-controls">
+						<button data-sort="playtime" class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform steam-sort-btn steam-sort-active">
+							{i18n(I18nKey.steamSortByPlaytime)}
+						</button>
+						<button data-sort="name" class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform steam-sort-btn">
+							{i18n(I18nKey.steamSortByName)}
+						</button>
+						<button data-sort="recent" class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform steam-sort-btn">
+							{i18n(I18nKey.steamSortByRecent)}
+						</button>
+					</div>
+				)}
+			</div>
+
+			<!-- Game Grid -->
+			{unifiedGames.length > 0 ? (
+				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="steam-game-grid">
+					{unifiedGames.map((game) => (
+						<a
+							href={`https://store.steampowered.com/app/${game.appid}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="steam-game-card flex flex-col rounded-lg overflow-hidden border border-(--line-divider) hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 bg-(--card-bg)"
+							data-playtime={game.playtimeForever}
+							data-name={game.name}
+							data-recent={game.lastPlayed}
+						>
+							<div class="relative w-full aspect-[460/215] overflow-hidden bg-neutral-200 dark:bg-neutral-800">
+								<img
+									src={game.headerUrl}
+									alt={game.name}
+									class="w-full h-full object-cover"
+									loading="lazy"
+									onerror="this.style.display='none'"
+								/>
+							</div>
+							<div class="flex flex-col gap-1 p-3 flex-1">
+								<div class="text-sm font-semibold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug">
+									{game.name}
+								</div>
+								<div class="flex items-center justify-between mt-auto pt-2">
+									<span class="text-xs text-(--primary) font-medium">
+										{formatHours(game.playtimeForever)}
+									</span>
+									{game.lastPlayed > 0 && (
+										<span class="text-xs text-neutral-400 dark:text-neutral-500">
+											{formatLastPlayed(game.lastPlayed)}
+										</span>
+									)}
+								</div>
+								{game.playtime2Weeks > 0 && (
+									<div class="text-xs text-green-600 dark:text-green-400 mt-0.5">
+										{i18n(I18nKey.steamRecentPlaytime)}: {formatHours(game.playtime2Weeks)}
+									</div>
+								)}
+							</div>
+						</a>
+					))}
+				</div>
+			) : (
+				<div class="text-center py-16">
+					<div class="inline-flex items-center justify-center w-16 h-16 bg-(--btn-regular-bg) rounded-full mb-6 border border-(--line-divider)">
+						<Icon name="material-symbols:settings" class="text-[2rem] text-(--btn-content)" />
+					</div>
+					<h2 class="text-xl font-semibold text-black/80 dark:text-white/80 mb-3">
+						{!hasApiKey ? i18n(I18nKey.steamConfigNeeded) : i18n(I18nKey.steamNoGames)}
+					</h2>
+					<p class="text-black/60 dark:text-white/60 mb-4 max-w-md mx-auto">
+						{!hasApiKey
+							? i18n(I18nKey.steamConfigNeededReason)
+							: i18n(I18nKey.steamNoGamesReason)}
+					</p>
+				</div>
+			)}
+		</div>
+	</div>
+</MainGridLayout>
+
+<script>
+	(function initSteamSort() {
+		const controls = document.getElementById('steam-sort-controls');
+		const grid = document.getElementById('steam-game-grid');
+		if (!controls || !grid) return;
+
+		const buttons = controls.querySelectorAll('.steam-sort-btn');
+
+		buttons.forEach(btn => {
+			btn.addEventListener('click', () => {
+				buttons.forEach(b => b.classList.remove('steam-sort-active'));
+				btn.classList.add('steam-sort-active');
+
+				const sortBy = btn.dataset.sort;
+				const cards = Array.from(grid.querySelectorAll('.steam-game-card'));
+
+				cards.sort((a, b) => {
+					if (sortBy === 'playtime') {
+						return parseInt(b.dataset.playtime || '0') - parseInt(a.dataset.playtime || '0');
+					} else if (sortBy === 'name') {
+						return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+					} else if (sortBy === 'recent') {
+						return parseInt(b.dataset.recent || '0') - parseInt(a.dataset.recent || '0');
+					}
+					return 0;
+				});
+
+				cards.forEach(card => grid.appendChild(card));
+			});
+		});
+	})();
+</script>
+
+<style>
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.steam-sort-active {
+		background-color: var(--primary) !important;
+		color: white !important;
+	}
+	:root.dark .steam-sort-active {
+		color: black !important;
+	}
+</style>

@@ -39,6 +39,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 根据配置决定是否添加番组计划，在siteConfig关闭pages.bangumi时导航栏不显示番组计划
 			...(siteConfig.pages.bangumi ? [LinkPreset.Bangumi] : []),
+
+			// 根据配置决定是否添加Steam游戏库
+			...(siteConfig.pages.steam ? [LinkPreset.Steam] : []),
 		],
 	});
 

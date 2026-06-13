@@ -1,0 +1,97 @@
+---
+import { Icon } from "astro-icon/components";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import { steamConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { SteamRecentlyPlayedGame, SteamRecentlyPlayedResponse } from "@/types/steam";
+import { getSteamImageUrl } from "@/types/steam";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+const MAX_DISPLAY = 5;
+
+let games: SteamRecentlyPlayedGame[] = [];
+const hasApiKey = !!steamConfig.apiKey;
+let fetchError = false;
+
+if (hasApiKey) {
+	try {
+		const url = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=${steamConfig.apiKey}&steamid=${steamConfig.steamId}`;
+		const response = await fetch(url);
+		if (response.ok) {
+			const data: SteamRecentlyPlayedResponse = await response.json();
+			games = (data.response?.games || []).slice(0, MAX_DISPLAY);
+		} else {
+			fetchError = true;
+		}
+	} catch (e) {
+		console.error("[Steam Widget] Fetch error:", e);
+		fetchError = true;
+	}
+}
+
+function formatPlaytime(minutes: number): string {
+	if (minutes < 60) return `${minutes} ${i18n(I18nKey.steamMinutes)}`;
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+---
+
+<WidgetLayout name={i18n(I18nKey.steamRecentGames)} id="steam-recent" class={className} style={style}>
+	{!hasApiKey ? (
+		<div class="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">
+			<Icon name="material-symbols:settings" class="text-2xl mb-2 block mx-auto opacity-50" />
+			<p>{i18n(I18nKey.steamConfigNeededReason)}</p>
+		</div>
+	) : fetchError ? (
+		<div class="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">
+			<Icon name="material-symbols:error-outline" class="text-2xl mb-2 block mx-auto opacity-50" />
+			<p>{i18n(I18nKey.steamNoGames)}</p>
+		</div>
+	) : games.length === 0 ? (
+		<div class="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">
+			<Icon name="material-symbols:sports-esports" class="text-2xl mb-2 block mx-auto opacity-50" />
+			<p>{i18n(I18nKey.steamNoRecentGames)}</p>
+		</div>
+	) : (
+		<div class="flex flex-col gap-2">
+			{games.map((game) => (
+				<a
+					href={`https://store.steampowered.com/app/${game.appid}`}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="flex items-center gap-3 p-2 rounded-lg hover:bg-(--btn-regular-bg) transition-colors group"
+				>
+					<img
+						src={getSteamImageUrl(game.appid, game.img_icon_url, "icon")}
+						alt={game.name}
+						class="w-8 h-8 rounded object-cover shrink-0"
+						loading="lazy"
+						onerror="this.style.display='none'"
+					/>
+					<div class="flex-1 min-w-0">
+						<div class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate group-hover:text-(--primary) transition-colors">
+							{game.name}
+						</div>
+						<div class="text-xs text-neutral-500 dark:text-neutral-400">
+							{i18n(I18nKey.steamRecentPlaytime)}: {formatPlaytime(game.playtime_2weeks)}
+						</div>
+					</div>
+				</a>
+			))}
+			<a
+				href="/steam/"
+				class="flex items-center justify-center gap-1 mt-2 py-2 text-sm text-(--primary) font-medium rounded-lg hover:bg-(--btn-regular-bg) transition-colors"
+			>
+				<span>{i18n(I18nKey.steamViewFullLibrary)}</span>
+				<Icon name="material-symbols:arrow-forward-rounded" class="text-base" />
+			</a>
+		</div>
+	)}
+</WidgetLayout>
