@@ -3,7 +3,7 @@
   "type": "module",
   "version": "6.10.5",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "cross-env HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 astro dev",
     "start": "astro dev",
     "check": "astro check",
     "build": "node scripts/generate-icons.js && astro build && pagefind --site dist",
@@ -89,6 +89,7 @@
     "@types/mdast": "^4.0.4",
     "@types/qrcode": "^1.5.6",
     "@types/sanitize-html": "^2.16.1",
+    "cross-env": "^10.1.0",
     "postcss-import": "^16.1.1",
     "postcss-nesting": "^13.0.2",
     "tailwindcss": "^4.2.4"
