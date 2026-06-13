@@ -34,6 +34,8 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       
       - name: Build site
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
         run: pnpm run build
 
       - name: Create .nojekyll file
