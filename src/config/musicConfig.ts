@@ -41,7 +41,6 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		],
 	},
 
-	// 本地音乐配置（当 mode 为 'local' 时使用）
 	local: {
 		playlist: [],
 	},
