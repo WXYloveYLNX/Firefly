@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五十音学习 - 循环模式</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #1a1a2e;
+    --card-bg: #16213e;
+    --accent: #e94560;
+    --text: #eee;
+    --sub: #aaa;
+    --success: #2ecc71;
+    --gold: #f0c040;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  /* ── 顶部信息 ── */
+  .header {
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .header .badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    background: rgba(233,69,96,0.2);
+    color: var(--accent);
+    border: 1px solid rgba(233,69,96,0.3);
+  }
+
+  /* ── 进度条 ── */
+  .progress-wrap {
+    margin-bottom: 20px;
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--sub);
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── 卡片 ── */
+  .card-stage {
+    perspective: 800px;
+    margin: 0 auto 20px;
+    width: 260px;
+    height: 360px;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  /* 正面 */
+  .card-front {
+    background: var(--card-bg);
+    border: 2px solid rgba(255,255,255,0.08);
+  }
+  .card-front .kana {
+    font-size: 8rem;
+    font-weight: 300;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(233,69,96,0.3);
+    line-height: 1;
+  }
+  .card-front .hint {
+    font-size: 0.75rem;
+    color: var(--sub);
+    margin-top: 20px;
+    letter-spacing: 0.1em;
+  }
+
+  /* 背面 */
+  .card-back {
+    background: var(--card-bg);
+    border: 2px solid rgba(233,69,96,0.25);
+    transform: rotateY(180deg);
+  }
+  .card-back .romaji {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  .card-back .repeat {
+    font-size: 1.4rem;
+    color: #fff;
+    margin-top: 6px;
+  }
+  .card-back .label {
+    font-size: 0.75rem;
+    color: var(--sub);
+    margin-top: 16px;
+  }
+
+  /* ── 按钮 ── */
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 30px;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:active {
+    transform: scale(0.95);
+  }
+  .btn-prev {
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-prev:hover { background: rgba(255,255,255,0.12); }
+  .btn-next {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+  .btn-next:hover { filter: brightness(1.15); }
+  .btn-shuffle {
+    background: rgba(240,192,64,0.12);
+    color: var(--gold);
+    border: 1px solid rgba(240,192,64,0.25);
+    font-size: 0.82rem;
+    padding: 8px 18px;
+  }
+  .btn-shuffle:hover { background: rgba(240,192,64,0.2); }
+
+  /* ── 模式切换 ── */
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border: none;
+    background: rgba(255,255,255,0.03);
+    color: var(--sub);
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  /* ── 键盘提示 ── */
+  /* ── 假名类型标签 ── */
+  .kana-tab.active {
+    background: #4169e1 !important; /* 蓝色调，和红色模式标签区分 */
+  }
+
+  .key-hints {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.2);
+    margin-top: 10px;
+  }
+  .key-hints kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 0 2px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.7rem;
+    font-family: inherit;
+  }
+
+  /* ── 完成提示 ── */
+  .toast {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #000;
+    padding: 10px 28px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">🎉 一轮完成！自动从头开始～</div>
+
+<div class="container">
+  <div class="header">
+    <h1 id="main-title">五十音 · 平假名</h1>
+    <span class="badge" id="badge">顺序模式</span>
+
+  <!-- 假名类型切换 -->
+  <div class="mode-tabs" style="margin-top:14px; border-color:rgba(100,149,237,0.2);">
+    <button class="mode-tab kana-tab active" data-kana="hiragana" onclick="setKanaType('hiragana')">🌸 平假名</button>
+    <button class="mode-tab kana-tab" data-kana="katakana" onclick="setKanaType('katakana')">⚡ 片假名</button>
+  </div>
+  </div>
+
+  <!-- 模式切换 -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('sequential')">📋 顺序学习</button>
+    <button class="mode-tab" onclick="setMode('shuffle')">🔀 随机打乱</button>
+  </div>
+
+  <!-- 进度 -->
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="progress-text">1 / 46</span>
+      <span id="progress-pct">2%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: 2%"></div>
+    </div>
+  </div>
+
+  <!-- 卡片 -->
+  <div class="card-stage">
+    <div class="card" id="card" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="kana" id="kana">あ</div>
+        <div class="hint">👆 点击翻转</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="romaji" id="romaji">a</div>
+        <div class="repeat" id="repeat-kana">あ</div>
+        <div class="label">👆 点击翻回</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 按钮 -->
+  <div class="actions">
+    <button class="btn btn-prev" onclick="prevCard()" title="上一个">◀ 上一个</button>
+    <button class="btn btn-shuffle" id="btn-shuffle" onclick="toggleShuffle()">🔀 重新打乱</button>
+    <button class="btn btn-next" onclick="nextCard()" title="下一个">下一个 ▶</button>
+  </div>
+
+  <div class="key-hints">
+    键盘快捷键：<kbd>←</kbd> 上一个 &nbsp; <kbd>→</kbd> 下一个 &nbsp; <kbd>Space</kbd> 翻卡
+  </div>
+</div>
+
+<script>
+  // ── 五十音数据 ──
+  const ALL_HIRAGANA = [
+    { k: 'あ', r: 'a' }, { k: 'い', r: 'i' }, { k: 'う', r: 'u' }, { k: 'え', r: 'e' }, { k: 'お', r: 'o' },
+    { k: 'か', r: 'ka' }, { k: 'き', r: 'ki' }, { k: 'く', r: 'ku' }, { k: 'け', r: 'ke' }, { k: 'こ', r: 'ko' },
+    { k: 'さ', r: 'sa' }, { k: 'し', r: 'shi' }, { k: 'す', r: 'su' }, { k: 'せ', r: 'se' }, { k: 'そ', r: 'so' },
+    { k: 'た', r: 'ta' }, { k: 'ち', r: 'chi' }, { k: 'つ', r: 'tsu' }, { k: 'て', r: 'te' }, { k: 'と', r: 'to' },
+    { k: 'な', r: 'na' }, { k: 'に', r: 'ni' }, { k: 'ぬ', r: 'nu' }, { k: 'ね', r: 'ne' }, { k: 'の', r: 'no' },
+    { k: 'は', r: 'ha' }, { k: 'ひ', r: 'hi' }, { k: 'ふ', r: 'fu' }, { k: 'へ', r: 'he' }, { k: 'ほ', r: 'ho' },
+    { k: 'ま', r: 'ma' }, { k: 'み', r: 'mi' }, { k: 'む', r: 'mu' }, { k: 'め', r: 'me' }, { k: 'も', r: 'mo' },
+    { k: 'や', r: 'ya' }, { k: 'ゆ', r: 'yu' }, { k: 'よ', r: 'yo' },
+    { k: 'ら', r: 'ra' }, { k: 'り', r: 'ri' }, { k: 'る', r: 'ru' }, { k: 'れ', r: 're' }, { k: 'ろ', r: 'ro' },
+    { k: 'わ', r: 'wa' }, { k: 'を', r: 'wo' },
+    { k: 'ん', r: 'n' },
+  ];
+
+  const ALL_KATAKANA = [
+    { k: 'ア', r: 'a' }, { k: 'イ', r: 'i' }, { k: 'ウ', r: 'u' }, { k: 'エ', r: 'e' }, { k: 'オ', r: 'o' },
+    { k: 'カ', r: 'ka' }, { k: 'キ', r: 'ki' }, { k: 'ク', r: 'ku' }, { k: 'ケ', r: 'ke' }, { k: 'コ', r: 'ko' },
+    { k: 'サ', r: 'sa' }, { k: 'シ', r: 'shi' }, { k: 'ス', r: 'su' }, { k: 'セ', r: 'se' }, { k: 'ソ', r: 'so' },
+    { k: 'タ', r: 'ta' }, { k: 'チ', r: 'chi' }, { k: 'ツ', r: 'tsu' }, { k: 'テ', r: 'te' }, { k: 'ト', r: 'to' },
+    { k: 'ナ', r: 'na' }, { k: 'ニ', r: 'ni' }, { k: 'ヌ', r: 'nu' }, { k: 'ネ', r: 'ne' }, { k: 'ノ', r: 'no' },
+    { k: 'ハ', r: 'ha' }, { k: 'ヒ', r: 'hi' }, { k: 'フ', r: 'fu' }, { k: 'ヘ', r: 'he' }, { k: 'ホ', r: 'ho' },
+    { k: 'マ', r: 'ma' }, { k: 'ミ', r: 'mi' }, { k: 'ム', r: 'mu' }, { k: 'メ', r: 'me' }, { k: 'モ', r: 'mo' },
+    { k: 'ヤ', r: 'ya' }, { k: 'ユ', r: 'yu' }, { k: 'ヨ', r: 'yo' },
+    { k: 'ラ', r: 'ra' }, { k: 'リ', r: 'ri' }, { k: 'ル', r: 'ru' }, { k: 'レ', r: 're' }, { k: 'ロ', r: 'ro' },
+    { k: 'ワ', r: 'wa' }, { k: 'ヲ', r: 'wo' },
+    { k: 'ン', r: 'n' },
+  ];
+
+  // ── 状态 ──
+  let mode = 'sequential';            // 'sequential' | 'shuffle'
+  let kanaType = 'hiragana';          // 'hiragana' | 'katakana'
+  let activeData = ALL_HIRAGANA;      // 当前使用的数据
+  let order = [...Array(activeData.length).keys()];
+  let index = 0;
+  let cardFlipped = false;
+
+  // ── DOM 引用 ──
+  const cardEl     = document.getElementById('card');
+  const kanaEl     = document.getElementById('kana');
+  const romajiEl   = document.getElementById('romaji');
+  const repeatEl   = document.getElementById('repeat-kana');
+  const progressText = document.getElementById('progress-text');
+  const progressPct  = document.getElementById('progress-pct');
+  const progressFill = document.getElementById('progress-fill');
+  const badgeEl    = document.getElementById('badge');
+  const toastEl    = document.getElementById('toast');
+  const btnShuffle = document.getElementById('btn-shuffle');
+  const modeTabBtns    = document.querySelectorAll('.mode-tab:not(.kana-tab)');
+  const kanaTabBtns    = document.querySelectorAll('.kana-tab');
+  const mainTitleEl    = document.getElementById('main-title');
+
+  // ── 工具函数 ──
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function getCurrentKana() {
+    return activeData[order[index]];
+  }
+
+  // ── 渲染卡片 ──
+  function render() {
+    const item = getCurrentKana();
+    kanaEl.textContent = item.k;
+    romajiEl.textContent = item.r;
+    repeatEl.textContent = item.k;
+
+    // 翻转状态
+    cardEl.classList.toggle('flipped', cardFlipped);
+
+    // 进度
+    const num = index + 1;
+    const total = activeData.length;
+    const pct = Math.round((num / total) * 100);
+    progressText.textContent = `${num} / ${total}`;
+    progressPct.textContent = `${pct}%`;
+    progressFill.style.width = `${pct}%`;
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  // ── 翻卡 ──
+  function flipCard() {
+    cardFlipped = !cardFlipped;
+    cardEl.classList.toggle('flipped', cardFlipped);
+  }
+
+  // ── 导航 ──
+  function nextCard() {
+    // 先翻回正面（不管当前状态）
+    cardFlipped = false;
+
+    if (index < order.length - 1) {
+      // 还没到最后一个
+      index++;
+    } else {
+      // ✅ 到最后一个了 → 回到第一个！
+      index = 0;
+      if (mode === 'shuffle') {
+        order = shuffle(order);
+      }
+      showToast('🎉 一轮完成！自动从头开始～');
+    }
+    render();
+  }
+
+  function prevCard() {
+    cardFlipped = false;
+
+    if (index > 0) {
+      index--;
+    } else {
+      // 在第一个按「上一个」→ 跳到最后一个
+      index = order.length - 1;
+    }
+    render();
+  }
+
+  // ── 模式切换（顺序/随机） ──
+  function setMode(newMode) {
+    mode = newMode;
+    modeTabBtns.forEach(b => b.classList.remove('active'));
+    modeTabBtns.forEach(b => {
+      if (b.textContent.includes(newMode === 'sequential' ? '顺序' : '随机')) {
+        b.classList.add('active');
+      }
+    });
+    badgeEl.textContent = (kanaType === 'hiragana' ? '平假名' : '片假名') + ' · ' + (mode === 'sequential' ? '顺序' : '随机');
+
+    // 重置
+    index = 0;
+    cardFlipped = false;
+    if (mode === 'sequential') {
+      order = [...Array(activeData.length).keys()];
+    } else {
+      order = shuffle([...Array(activeData.length).keys()]);
+    }
+    render();
+  }
+
+  // ── 假名类型切换 ──
+  function setKanaType(type) {
+    kanaType = type;
+    activeData = type === 'hiragana' ? ALL_HIRAGANA : ALL_KATAKANA;
+    kanaTabBtns.forEach(b => b.classList.remove('active'));
+    kanaTabBtns.forEach(b => {
+      if (b.dataset.kana === type) b.classList.add('active');
+    });
+    mainTitleEl.textContent = type === 'hiragana' ? '五十音 · 平假名' : '五十音 · 片假名';
+    badgeEl.textContent = (type === 'hiragana' ? '平假名' : '片假名') + ' · ' + (mode === 'sequential' ? '顺序' : '随机');
+
+    // HACK: re-query mode tabs because querySelectorAll doesn't update the nodelist
+    document.querySelectorAll('.mode-tab:not(.kana-tab)').forEach(b => {
+      b.classList.remove('active');
+      if (b.textContent.includes(mode === 'sequential' ? '顺序' : '随机')) {
+        b.classList.add('active');
+      }
+    });
+
+    // 重置
+    index = 0;
+    cardFlipped = false;
+    if (mode === 'sequential') {
+      order = [...Array(activeData.length).keys()];
+    } else {
+      order = shuffle([...Array(activeData.length).keys()]);
+    }
+    render();
+  }
+
+  function toggleShuffle() {
+    if (mode === 'shuffle') {
+      order = shuffle([...Array(activeData.length).keys()]);
+      index = 0;
+      cardFlipped = false;
+      render();
+      showToast('🔀 已重新打乱！');
+    }
+  }
+
+  // ── 键盘控制 ──
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextCard();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prevCard();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      flipCard();
+    }
+  });
+
+  // ── 触摸滑动 ──
+  let touchStartX = 0;
+  cardEl.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+  });
+  cardEl.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 60) {
+      if (dx > 0) prevCard();
+      else nextCard();
+    }
+  });
+
+  // ── 初始渲染 ──
+  render();
+</script>
+</body>
+</html>
