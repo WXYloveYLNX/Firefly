@@ -45,6 +45,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
+	// 日语学习
+	links.push({
+		name: "日语",
+		url: "/五十音学习.html",
+		icon: "material-symbols:school",
+	});
+
 	// 关于及其子菜单
 	links.push({
 		name: "关于",
